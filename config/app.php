@@ -53,6 +53,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'redirect_url' => env('REDIRECT_URL', 'https://example.com'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +66,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+   'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

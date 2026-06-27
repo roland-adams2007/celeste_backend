@@ -21,8 +21,7 @@
 
     <link href="https://cdn.quilljs.com/2.0.3/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/2.0.3/quill.js"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-
+    <script src="https://unpkg.com/lucide@latest"></script>
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
@@ -32,6 +31,9 @@
 <body>
     @yield('content')
     @stack('scripts')
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>

@@ -66,6 +66,7 @@
                 <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
                 <span x-text="errorMessage"></span>
             </div>
+
             <form @submit.prevent="submit">
                 <div class="mb-4">
                     <label for="email"
@@ -106,9 +107,9 @@
                     </a>
                 </div>
 
-                <button type="submit" :disabled="loading"
+                <button type="submit" :disabled="loading || redirecting"
                     class="w-full bg-[#0E1A2B] text-white text-xs font-medium tracking-[0.12em] uppercase py-3 flex items-center justify-center gap-2.5 hover:bg-[#B89C6E] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <template x-if="!loading">
+                    <template x-if="!loading && !redirecting">
                         <span class="flex items-center gap-2.5">
                             <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
                         </span>
@@ -124,11 +125,22 @@
                             Signing in...
                         </span>
                     </template>
+                    <template x-if="redirecting">
+                        <span class="flex items-center gap-2.5">
+                            <svg class="animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                            </svg>
+                            Redirecting...
+                        </span>
+                    </template>
                 </button>
             </form>
 
             <div class="text-center mt-6 text-[11px] text-[#9ca3af] font-light">
-                <a href="{{ url('/') }}"
+                <a href="{{ route('frontend') }}"
                     class="text-[#6b7280] border-b border-transparent hover:border-[#0E1A2B] hover:text-[#0E1A2B] transition-colors">
                     ← Back to website
                 </a>
@@ -145,8 +157,6 @@
 
 @push('scripts')
     <script>
-        lucide.createIcons();
-
         function loginForm() {
             return {
                 form: {
@@ -155,6 +165,7 @@
                     remember: false,
                 },
                 loading: false,
+                redirecting: false,
                 shaking: false,
                 showPassword: false,
                 errorMessage: '',
@@ -176,8 +187,10 @@
 
                         const data = await response.json();
 
-                        if (response.ok) {
-                            window.location.href = data.redirect ?? '{{ route('dashboard') }}';
+                        if (data.success) {
+                            this.loading = false;
+                            this.redirecting = true;
+                            window.location.href = '{{ route('dashboard') }}';
                         } else {
                             this.errorMessage = data.message ?? 'Invalid email or password. Please try again.';
                             this.form.password = '';
@@ -187,7 +200,9 @@
                         this.errorMessage = 'Something went wrong. Please try again.';
                         this.triggerShake();
                     } finally {
-                        this.loading = false;
+                        if (!this.redirecting) {
+                            this.loading = false;
+                        }
                     }
                 },
 
