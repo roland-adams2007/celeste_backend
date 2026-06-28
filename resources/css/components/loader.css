@@ -1,0 +1,48 @@
+/*
+ * x-modal.loader styles
+ * Include via: @vite(['resources/css/components/loader.css'])
+ * or copy into your app.css
+ */
+
+/* ── Overlay ────────────────────────────────────────────── */
+.x-loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Inline (no overlay) */
+.x-loader-root:not(.x-loader-overlay) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Box ────────────────────────────────────────────────── */
+.x-loader-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ── Sizes ──────────────────────────────────────────────── */
+.x-loader-size-sm .x-loader-svg { width: 64px;  height: 64px;  }
+.x-loader-size-md .x-loader-svg { width: 120px; height: 120px; }
+.x-loader-size-lg .x-loader-svg { width: 200px; height: 200px; }
+.x-loader-size-xl .x-loader-svg { width: 300px; height: 300px; }
+
+/* ── Message ────────────────────────────────────────────── */
+.x-loader-message {
+    font-size: 0.875rem;
+    color: #6b7280;
+    letter-spacing: 0.025em;
+    margin: 0;
+    text-align: center;
+}

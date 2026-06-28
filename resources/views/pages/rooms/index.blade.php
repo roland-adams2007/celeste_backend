@@ -5,7 +5,7 @@
 
 
 @section('admin-content')
- 
+
     @push('scripts')
     @endpush
 @endsection

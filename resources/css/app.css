@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@import "components/loader.css";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -14,6 +14,7 @@
 
 body {
     font-family: "DM Sans", sans-serif;
+    background-color: "#F9F4EE";
 }
 
 h1,

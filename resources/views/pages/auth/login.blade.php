@@ -41,7 +41,7 @@
 @endpush
 
 @section('content')
-    <div class="min-h-screen flex items-center justify-center bg-[#F9F4EE] p-5">
+    <div class="min-h-screen flex items-center justify-center  p-5">
 
         <div class="w-full max-w-md bg-white border border-[#e5ddd3] px-8 py-10 md:px-10 shadow-lg transition-transform"
             id="login-card" x-data="loginForm()" :class="{ 'shake': shaking }">
