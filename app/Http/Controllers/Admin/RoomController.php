@@ -11,4 +11,7 @@ class RoomController extends Controller
     {
         return view('pages.rooms.index');
     }
+    public function store(Request $request){
+
+    }
 }
