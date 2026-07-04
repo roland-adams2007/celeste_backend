@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\RoomController;
@@ -16,6 +17,7 @@ Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name(
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+    // Route::get('/amenities', [AmenityController::class, 'list'])->name('amenities.list');
     Route::get('/uploads/list', [UploadContoller::class, 'list'])->name('uploads.list');
     Route::post('/uploads', [UploadContoller::class, 'store'])->name('uploads.store');
 });

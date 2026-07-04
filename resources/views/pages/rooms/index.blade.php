@@ -48,7 +48,9 @@
         </style>
     @endpush
 
-    <div x-data="roomsPage()" x-init="init()" class="px-4 sm:px-6 md:px-10 py-6 md:py-8">
+    <div x-data="roomsPage()" x-init="init()"
+        x-effect="document.body.classList.toggle('overflow-hidden', showFormModal || showImageModal || showUploadModal || showConfirmModal || showDetailsDrawer)"
+        class="px-4 sm:px-6 md:px-10 py-6 md:py-8">
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-10">
             <div class="bg-white border border-[#e5ddd3] p-4 md:p-5">
@@ -134,7 +136,7 @@
                         <th class="px-5 py-3.5 text-[10px] uppercase tracking-widest text-gray-400 font-normal"
                             style="letter-spacing:0.12em;">Size</th>
                         <th class="px-5 py-3.5 text-[10px] uppercase tracking-widest text-gray-400 font-normal"
-                            style="letter-spacing:0.12em;">Guests</th>
+                            style="letter-spacing:0.12em;">Capacity</th>
                         <th class="px-5 py-3.5 text-[10px] uppercase tracking-widest text-gray-400 font-normal"
                             style="letter-spacing:0.12em;">Amenities</th>
                         <th class="px-5 py-3.5 text-[10px] uppercase tracking-widest text-gray-400 font-normal"
@@ -162,16 +164,16 @@
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-[13px] text-gray-500" style="font-weight:300;"
-                                x-text="viewLabel(room.view)"></td>
+                                x-text="viewLabel(room.view_type)"></td>
                             <td class="px-5 py-4 font-['Cormorant_Garamond'] text-base text-[#0E1A2B]"
-                                style="font-weight:600;" x-text="formatPrice(room.price)"></td>
+                                style="font-weight:600;" x-text="formatPrice(room.rate)"></td>
                             <td class="px-5 py-4 text-[13px] text-gray-500" style="font-weight:300;"
                                 x-text="room.size + ' sqm'"></td>
                             <td class="px-5 py-4 text-[13px] text-gray-500" style="font-weight:300;"
-                                x-text="room.guests"></td>
+                                x-text="room.capacity"></td>
                             <td class="px-5 py-4">
                                 <div class="flex gap-2.5 text-gray-400">
-                                    <template x-for="a in room.amenities.slice(0,4)" :key="a">
+                                    <template x-for="a in amenityIcons(room.amenities).slice(0,4)" :key="a">
                                         <i :data-lucide="a" class="w-3.5 h-3.5"></i>
                                     </template>
                                 </div>
@@ -231,13 +233,13 @@
 
                     <div class="flex items-center justify-between text-[13px] text-gray-500 mb-3"
                         style="font-weight:300;">
-                        <span x-text="viewLabel(room.view)"></span>
-                        <span x-text="room.size + ' sqm · ' + room.guests + ' guests'"></span>
+                        <span x-text="viewLabel(room.view_type)"></span>
+                        <span x-text="room.size + ' sqm · ' + room.capacity + ' guests'"></span>
                     </div>
 
                     <div class="flex items-center justify-between">
                         <p class="font-['Cormorant_Garamond'] text-lg text-[#0E1A2B]" style="font-weight:600;"
-                            x-text="formatPrice(room.price)"></p>
+                            x-text="formatPrice(room.rate)"></p>
                         <div class="flex items-center gap-4 text-gray-400">
                             <button @click="openView(room)"><i data-lucide="eye" class="w-4 h-4"></i></button>
                             <button @click="openEdit(room)"><i data-lucide="pencil" class="w-4 h-4"></i></button>
@@ -273,7 +275,9 @@
             </button>
         </div>
 
-        <x-modals.form />
+        <x-modals.form entity-label="Suite">
+            @include('pages.rooms.form-fields')
+        </x-modals.form>
         <x-modals.confirm />
         <x-modals.view-image />
         <x-modals.sidebar />
@@ -291,73 +295,103 @@
                     perPage: 5,
                     rooms: [{
                             id: 1,
-                            code: 'Suite 01',
+                            type: 'standard',
+                            code: 'RT-001',
                             name: 'Deluxe King',
-                            view: 'city',
-                            price: 65000,
+                            category: 'Deluxe',
+                            floor: '2nd Floor',
+                            room_numbers: ['201', '202', '203'],
+                            view_type: 'city',
+                            rate: 65000,
+                            rate_weekend: 75000,
                             size: 40,
-                            guests: 2,
+                            capacity: 2,
+                            bed_type: 'King',
                             status: 'available',
-                            amenities: ['wifi', 'tv', 'coffee', 'shield-check'],
+                            amenities: ['wifi', 'tv', 'breakfast', 'safe'],
                             image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=700&q=80',
                             images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=700&q=80'],
-                            description: 'A refined city-facing suite with a plush king bed, warm oak finishes and a private workspace.'
+                            notes: 'A refined city-facing suite with a plush king bed, warm oak finishes and a private workspace.'
                         },
                         {
                             id: 2,
-                            code: 'Suite 02',
+                            type: 'standard',
+                            code: 'RT-002',
                             name: 'Premier Double',
-                            view: 'pool',
-                            price: 85000,
+                            category: 'Executive',
+                            floor: '3rd Floor',
+                            room_numbers: ['301', '302'],
+                            view_type: 'pool',
+                            rate: 85000,
+                            rate_weekend: 95000,
                             size: 52,
-                            guests: 2,
+                            capacity: 2,
+                            bed_type: 'Queen',
                             status: 'available',
-                            amenities: ['wifi', 'bath', 'coffee', 'wine'],
+                            amenities: ['wifi', 'bath', 'breakfast', 'minibar'],
                             image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=700&q=80',
                             images: ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=700&q=80'],
-                            description: 'Overlooking the infinity pool, this suite pairs relaxed luxury with a private soaking tub.'
+                            notes: 'Overlooking the infinity pool, this suite pairs relaxed luxury with a private soaking tub.'
                         },
                         {
                             id: 3,
-                            code: 'Suite 03',
+                            type: 'standard',
+                            code: 'RT-003',
                             name: 'Executive Studio',
-                            view: 'garden',
-                            price: 110000,
+                            category: 'Executive',
+                            floor: '1st Floor',
+                            room_numbers: ['101'],
+                            view_type: 'garden',
+                            rate: 110000,
+                            rate_weekend: 120000,
                             size: 68,
-                            guests: 3,
+                            capacity: 3,
+                            bed_type: 'King',
                             status: 'maintenance',
-                            amenities: ['wifi', 'utensils', 'car', 'bath'],
+                            amenities: ['wifi', 'kitchenette', 'parking', 'bath'],
                             image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=700&q=80',
                             images: ['https://images.unsplash.com/photo-1590490360182-c33d57733427?w=700&q=80'],
-                            description: 'A garden-facing studio with a full kitchenette, ideal for extended stays.'
+                            notes: 'A garden-facing studio with a full kitchenette, ideal for extended stays.'
                         },
                         {
                             id: 4,
-                            code: 'Suite 04',
+                            type: 'signature',
+                            code: 'RT-004',
                             name: 'Penthouse Royal',
-                            view: 'panoramic',
-                            price: 250000,
+                            category: 'Penthouse',
+                            floor: 'Penthouse Level',
+                            room_numbers: ['PH-01'],
+                            view_type: 'panoramic',
+                            rate: 250000,
+                            rate_weekend: 280000,
                             size: 120,
-                            guests: 4,
+                            capacity: 4,
+                            bed_type: 'Super King',
                             status: 'available',
-                            amenities: ['wifi', 'star', 'wind', 'car'],
+                            amenities: ['wifi', 'premium-service', 'air-conditioning', 'parking'],
                             image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=700&q=80',
                             images: ['https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=700&q=80'],
-                            description: 'Our signature penthouse with panoramic skyline views, private butler and terrace.'
+                            notes: 'Our signature penthouse with panoramic skyline views, private butler and terrace.'
                         },
                         {
                             id: 5,
-                            code: 'Suite 05',
+                            type: 'standard',
+                            code: 'RT-005',
                             name: 'Classic Twin',
-                            view: 'city',
-                            price: 72000,
+                            category: 'Deluxe',
+                            floor: '2nd Floor',
+                            room_numbers: ['210', '211'],
+                            view_type: 'city',
+                            rate: 72000,
+                            rate_weekend: 80000,
                             size: 44,
-                            guests: 2,
+                            capacity: 2,
+                            bed_type: 'Twin King',
                             status: 'occupied',
-                            amenities: ['wifi', 'bath', 'coffee', 'tv'],
+                            amenities: ['wifi', 'bath', 'breakfast', 'tv'],
                             image: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=700&q=80',
                             images: ['https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=700&q=80'],
-                            description: 'Two elegant twin beds in a bright city-view room, perfect for friends or colleagues.'
+                            notes: 'Two elegant twin beds in a bright city-view room, perfect for friends or colleagues.'
                         }
                     ],
                     showFormModal: false,
@@ -379,17 +413,33 @@
                     mediaLibrary: [],
                     mediaLibraryLoading: false,
                     tempSelectedImages: [],
+                    amenitiesList: [],
                     init() {
                         this.$nextTick(() => lucide.createIcons());
                         this.$watch('search', () => this.currentPage = 1);
                         this.$watch('filterView', () => this.currentPage = 1);
+                        this.loadAmenities();
+                    },
+                    loadAmenities() {
+                        fetch("{{ route('amenities.list') }}")
+                            .then(r => r.json())
+                            .then(data => {
+                                this.amenitiesList = data;
+                                this.$nextTick(() => lucide.createIcons());
+                            });
+                    },
+                    amenityIcons(slugs) {
+                        return (slugs || []).map(slug => {
+                            const found = this.amenitiesList.find(a => a.slug === slug);
+                            return found ? found.icon : 'circle';
+                        });
                     },
                     get filteredRooms() {
                         return this.rooms.filter(r => {
                             const q = this.search.toLowerCase();
                             const matchesSearch = r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(
                                 q);
-                            const matchesFilter = this.filterView === 'all' || r.view === this.filterView;
+                            const matchesFilter = this.filterView === 'all' || r.view_type === this.filterView;
                             return matchesSearch && matchesFilter;
                         });
                     },
@@ -424,24 +474,52 @@
                         this.formMode = 'create';
                         this.formData = {
                             id: null,
-                            code: 'Suite ' + String(this.rooms.length + 1).padStart(2, '0'),
+                            type: 'standard',
+                            code: 'RT-' + String(this.rooms.length + 1).padStart(3, '0'),
                             name: '',
-                            view: 'city',
-                            price: '',
+                            category: '',
+                            floor: '',
+                            room_numbers: [],
+                            room_number_input: '',
+                            view_type: 'city',
+                            rate: '',
+                            rate_weekend: '',
                             size: '',
-                            guests: 1,
+                            capacity: 2,
+                            bed_type: 'King',
                             status: 'available',
                             images: [],
-                            description: '',
+                            notes: '',
                             amenities: []
                         };
                         this.showFormModal = true;
                         this.$nextTick(() => lucide.createIcons());
                     },
+                    addRoomNumber() {
+                        const val = this.formData.room_number_input.trim();
+                        if (val && !this.formData.room_numbers.includes(val)) {
+                            this.formData.room_numbers.push(val);
+                        }
+                        this.formData.room_number_input = '';
+                    },
+                    removeRoomNumber(num) {
+                        this.formData.room_numbers = this.formData.room_numbers.filter(n => n !== num);
+                    },
+                    handleRoomNumberKey(e) {
+                        if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            this.addRoomNumber();
+                        } else if (e.key === 'Backspace' && this.formData.room_number_input === '' && this.formData
+                            .room_numbers.length) {
+                            this.formData.room_numbers.pop();
+                        }
+                    },
                     openEdit(room) {
                         this.formMode = 'edit';
                         this.formData = {
                             ...room,
+                            room_numbers: room.room_numbers ? [...room.room_numbers] : [],
+                            room_number_input: '',
                             images: room.images ? [...room.images] : (room.image ? [room.image] : []),
                             amenities: [...room.amenities]
                         };
@@ -460,7 +538,8 @@
                         this.formData.images = this.formData.images.filter(i => i !== url);
                     },
                     saveRoom() {
-                        if (!this.formData.name || !this.formData.price || !this.formData.size) return;
+                        if (!this.formData.name || !this.formData.rate || !this.formData.size) return;
+                        if (!this.formData.room_numbers.length) return;
                         this.formData.image = this.formData.images[0] || '';
                         if (this.formMode === 'create') {
                             this.formData.id = Date.now();

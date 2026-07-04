@@ -64,7 +64,7 @@
                         <div @click="toggleSelectImage(item.url)"
                             class="relative aspect-square overflow-hidden border cursor-pointer"
                             :class="tempSelectedImages.includes(item.url) ? 'border-[#B89C6E]' : 'border-[#e5ddd3]'">
-                            <img :src="item.url" class="w-full h-full object-cover">
+                            <img loading="lazy" :src="item.url" class="w-full h-full object-cover" />
                             <div x-show="tempSelectedImages.includes(item.url)"
                                 class="absolute inset-0 bg-[#0E1A2B]/40 flex items-center justify-center">
                                 <div class="w-6 h-6 rounded-full bg-[#B89C6E] flex items-center justify-center">

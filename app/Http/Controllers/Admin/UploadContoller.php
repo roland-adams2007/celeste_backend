@@ -36,7 +36,7 @@ class UploadContoller extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|max:5120', // 5MB max
+            'image' => 'required|image|max:5120',
         ]);
         $file = $request->file('image');
         $encoded = Image::read($file)

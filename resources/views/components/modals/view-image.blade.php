@@ -13,7 +13,7 @@
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
         <div class="bg-white border border-[#e5ddd3] overflow-hidden">
-            <img :src="activeImage" class="w-full max-h-[70vh] object-cover">
+            <img loading="lazy" :src="activeImage" class="w-full max-h-[70vh] object-cover">
             <div class="px-5 py-3 border-t border-[#e5ddd3]">
                 <p class="text-[11px] uppercase tracking-widest text-[#B89C6E]" x-text="activeImageCaption"></p>
             </div>
