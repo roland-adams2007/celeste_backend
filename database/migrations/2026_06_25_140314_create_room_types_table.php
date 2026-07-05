@@ -16,8 +16,8 @@ return new class extends Migration
             $table->enum('type', ['standard', 'signature'])->default('standard');
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('code')->unique();
             $table->string('category');
+            $table->text('description');
             $table->unsignedSmallInteger('size');
             $table->unsignedTinyInteger('capacity')->default(2);
             $table->string('bed_type');

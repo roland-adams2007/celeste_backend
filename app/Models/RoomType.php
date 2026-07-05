@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Sluggable\HasSlug;
+use Spatie\Sluggable\SlugOptions;
+
+
 
 class RoomType extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     /**
      * The attributes that are mass assignable.
@@ -15,38 +19,28 @@ class RoomType extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'type',          // 'standard' or 'signature'
-        'name',          // e.g., "Deluxe King"
-        'number',        // e.g., "DK"
-        'category',      // e.g., "Deluxe", "Executive", "Penthouse"
-        'floor',         // e.g., "1st – 2nd Floor"
-        'size',          // in sqm
-        'capacity',      // number of guests
-        'bed',           // e.g., "King", "Queen"
+        'type',
+        'name',
+        'slug',
+        'category',
+        'description',
+        'size',
+        'capacity',
+        'bed_type',      // e.g., "King", "Queen"
         'view_type',     // e.g., "City view", "Pool view"
         'rate',          // regular night rate
-        'rate_wknd',     // weekend rate
-        'units',         // total number of rooms of this type
-        'units_avail',   // available rooms of this type
-        'status',        // 'available', 'occupied', 'reserved', 'cleaning', 'maintenance'
-        'img',           // image URL
+        'rate_weekend',  // weekend rate
+        'images',        // JSON array of image URLs
         'notes',         // internal notes
-        'room_numbers',  // JSON array of room numbers
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
+    // Optional: Add casts for JSON fields
     protected $casts = [
-        'room_numbers' => 'array',
+        'images' => 'array',
         'rate' => 'integer',
-        'rate_wknd' => 'integer',
+        'rate_weekend' => 'integer',
         'size' => 'integer',
         'capacity' => 'integer',
-        'units' => 'integer',
-        'units_avail' => 'integer',
     ];
 
     /**
@@ -55,6 +49,11 @@ class RoomType extends Model
     public function amenities()
     {
         return $this->belongsToMany(Amenity::class, 'amenity_room_type', 'room_type_id', 'amenity_id');
+    }
+
+    public function rooms()
+    {
+        return $this->hasMany(Room::class);
     }
 
     /**
@@ -178,5 +177,13 @@ class RoomType extends Model
     public function hasAmenity(string $amenityName): bool
     {
         return $this->amenities->contains('name', $amenityName);
+    }
+
+
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom('name')
+            ->saveSlugsTo('slug');
     }
 }

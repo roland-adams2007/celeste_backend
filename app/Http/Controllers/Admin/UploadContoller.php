@@ -38,6 +38,7 @@ class UploadContoller extends Controller
         $request->validate([
             'image' => 'required|image|max:5120',
         ]);
+
         $file = $request->file('image');
         $encoded = Image::read($file)
             ->scaleDown(width: 1200)
@@ -55,7 +56,7 @@ class UploadContoller extends Controller
             'user_id' => auth()->id(),
             'extension' => 'webp',
             'type' => 'image',
-            'file_size' => Storage::disk('s3')->size($folderPath),
+            'file_size' => strlen((string) $encoded),
         ]);
 
         return response()->json([

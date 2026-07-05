@@ -61,11 +61,11 @@
 
                 <div x-show="!mediaLibraryLoading && mediaLibrary.length" class="grid grid-cols-4 gap-3">
                     <template x-for="item in mediaLibrary" :key="item.id">
-                        <div @click="toggleSelectImage(item.url)"
+                        <div @click="toggleSelectImage(item)"
                             class="relative aspect-square overflow-hidden border cursor-pointer"
-                            :class="tempSelectedImages.includes(item.url) ? 'border-[#B89C6E]' : 'border-[#e5ddd3]'">
+                            :class="isImageSelected(item) ? 'border-[#B89C6E]' : 'border-[#e5ddd3]'">
                             <img loading="lazy" :src="item.url" class="w-full h-full object-cover" />
-                            <div x-show="tempSelectedImages.includes(item.url)"
+                            <div x-show="isImageSelected(item)"
                                 class="absolute inset-0 bg-[#0E1A2B]/40 flex items-center justify-center">
                                 <div class="w-6 h-6 rounded-full bg-[#B89C6E] flex items-center justify-center">
                                     <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
