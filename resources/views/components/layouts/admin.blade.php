@@ -126,14 +126,17 @@
             }
         </style>
     @endpush
+
     <div id="page-loader">
         <x-loader.loader :overlay="false" size="lg" />
     </div>
+
     <div x-data="{ sidebarOpen: false }" class="min-h-screen flex bg-[#F9F4EE]">
         <div x-show="sidebarOpen" x-transition:enter="overlay-enter" x-transition:enter-start="overlay-enter-start"
             x-transition:enter-end="overlay-enter-end" x-transition:leave="overlay-leave"
             x-transition:leave-start="overlay-leave-start" x-transition:leave-end="overlay-leave-end" x-cloak
             @click="sidebarOpen = false" class="fixed inset-0 bg-[#0E1A2B]/60 z-30 lg:hidden"></div>
+
         <aside x-show="true" x-transition:enter="sidebar-enter" x-transition:enter-start="sidebar-enter-start"
             x-transition:enter-end="sidebar-enter-end" x-transition:leave="sidebar-leave"
             x-transition:leave-start="sidebar-leave-start" x-transition:leave-end="sidebar-leave-end"
@@ -192,6 +195,12 @@
                     <i data-lucide="users" class="w-4 h-4 shrink-0"></i> Guests
                 </a>
 
+                <div class="text-[9px] tracking-[0.2em] uppercase text-white/30 px-6 pt-4 pb-1.5">Content</div>
+                <a href="{{ route('uploads') }}"
+                    class="nav-item flex items-center gap-3 px-6 py-2.5 text-[13px] text-white/55 hover:text-white hover:bg-white/5 transition-all no-underline {{ request()->routeIs('uploads') ? 'nav-active' : '' }}">
+                    <i data-lucide="upload" class="w-4 h-4 shrink-0"></i> Uploads
+                </a>
+
                 <div class="text-[9px] tracking-[0.2em] uppercase text-white/30 px-6 pt-4 pb-1.5">Finance</div>
                 <a href="#"
                     class="nav-item flex items-center gap-3 px-6 py-2.5 text-[13px] text-white/55 hover:text-white hover:bg-white/5 transition-all no-underline">
@@ -224,6 +233,7 @@
                 </a>
             </div>
         </aside>
+
         <div class="flex-1 flex flex-col min-h-screen lg:ml-60">
             <header
                 class="bg-white border-b border-[#e5ddd3] h-[60px] px-5 lg:px-7 flex items-center justify-between sticky top-0 z-20">
@@ -245,7 +255,6 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-
                     <div x-data="{
                         open: false,
                         seen: false,
@@ -359,14 +368,15 @@
                             </a>
                         </div>
                     </div>
-
                 </div>
             </header>
 
             @yield('admin-content')
-
         </div>
     </div>
+
+    {{-- Alert Component --}}
+    <x-alert />
 
     @push('scripts')
         <script>

@@ -31,8 +31,6 @@ class UploadContoller extends Controller
         return response()->json($uploads);
     }
 
-
-
     public function store(Request $request)
     {
         $request->validate([
@@ -64,5 +62,12 @@ class UploadContoller extends Controller
             'url' => $upload->file_name,
             'name' => $upload->file_original_name,
         ]);
+    }
+
+    public function destroy($id)
+    {
+        $upload = Uploads::findOrFail($id);
+        $upload->delete();
+        return response()->json(['success' => true, 'message' => 'File deleted successfully.']);
     }
 }

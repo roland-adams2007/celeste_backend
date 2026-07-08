@@ -156,8 +156,6 @@
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                     </div>
                                     <div>
-                                        <p class="text-[10px] uppercase tracking-widest text-[#B89C6E] mb-0.5"
-                                            style="letter-spacing:0.12em;" x-text="room.code"></p>
                                         <p class="font-['Cormorant_Garamond'] text-base text-[#0E1A2B]"
                                             style="font-weight:500;" x-text="room.name"></p>
                                     </div>
@@ -223,8 +221,6 @@
                             <img :src="room.image" :alt="room.name" class="w-full h-full object-cover">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-[10px] uppercase tracking-widest text-[#B89C6E] mb-0.5"
-                                style="letter-spacing:0.12em;" x-text="room.code"></p>
                             <p class="font-['Cormorant_Garamond'] text-base text-[#0E1A2B] truncate"
                                 style="font-weight:500;" x-text="room.name"></p>
                         </div>
@@ -277,13 +273,13 @@
             </button>
         </div>
 
-        <x-modals.form entity-label="Suite" show="showFormModal" mode="formMode" error="formError"
+        <x-modals.form entity-label="Suite" show="showFormModal" stack-key="form" mode="formMode" error="formError"
             saving="savingRoom" on-submit="saveRoom()" on-close="closeForm()">
             @include('pages.rooms.form-fields')
         </x-modals.form>
 
-        <x-modals.form entity-label="Room" show="showRoomFormModal" mode="roomFormMode" error="roomFormError"
-            saving="savingRoomUnit" on-submit="saveRoomUnit()" on-close="closeRoomForm()">
+        <x-modals.form entity-label="Room" show="showRoomFormModal" stack-key="roomForm" mode="roomFormMode"
+            error="roomFormError" saving="savingRoomUnit" on-submit="saveRoomUnit()" on-close="closeRoomForm()">
             @include('pages.rooms.room-form-fields')
         </x-modals.form>
 
@@ -336,6 +332,19 @@
                     mediaLibraryLoading: false,
                     tempSelectedImages: [],
                     amenitiesList: [],
+
+                    modalStack: [],
+                    pushModal(name) {
+                        this.modalStack = this.modalStack.filter(m => m !== name);
+                        this.modalStack.push(name);
+                    },
+                    popModal(name) {
+                        this.modalStack = this.modalStack.filter(m => m !== name);
+                    },
+                    zIndex(name) {
+                        const idx = this.modalStack.indexOf(name);
+                        return idx === -1 ? 50 : 50 + (idx + 1) * 10;
+                    },
 
                     init() {
                         this.$nextTick(() => lucide.createIcons());
@@ -413,8 +422,7 @@
                     get filteredRooms() {
                         return this.rooms.filter(r => {
                             const q = this.search.toLowerCase();
-                            const matchesSearch = r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(
-                                q);
+                            const matchesSearch = r.name.toLowerCase().includes(q);
                             const matchesFilter = this.filterView === 'all' || r.view_type === this.filterView;
                             return matchesSearch && matchesFilter;
                         });
@@ -470,6 +478,7 @@
                             amenities: []
                         };
                         this.showFormModal = true;
+                        this.pushModal('form');
                         this.$nextTick(() => lucide.createIcons());
                     },
 
@@ -484,11 +493,14 @@
                             amenities: room.amenities ? [...room.amenities] : []
                         };
                         this.showFormModal = true;
+                        this.pushModal('form');
                         this.$nextTick(() => lucide.createIcons());
                     },
 
                     closeForm() {
                         this.showFormModal = false;
+                        this.popModal('form');
+                        this.clearIdFromUrl();
                     },
 
                     toggleAmenity(id) {
@@ -531,7 +543,7 @@
 
                         const isEdit = this.formMode === 'edit';
                         const url = isEdit ?
-                            "{{ url('/admin/rooms') }}/" + this.formData.id :
+                            "{{ route('rooms.update', ':id') }}".replace(':id', this.formData.id) :
                             "{{ route('rooms.store') }}";
 
                         fetch(url, {
@@ -555,7 +567,8 @@
                                 }
                                 return data;
                             })
-                            .then(room => {
+                            .then(data => {
+                                const room = data.room;
                                 if (isEdit) {
                                     const idx = this.rooms.findIndex(r => r.id === room.id);
                                     if (idx > -1) this.rooms[idx] = room;
@@ -564,7 +577,15 @@
                                 }
                                 this.setIdInUrl(room.id);
                                 this.showFormModal = false;
+                                this.popModal('form');
                                 this.$nextTick(() => lucide.createIcons());
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: {
+                                        type: 'success',
+                                        title: isEdit ? 'Suite Updated' : 'Suite Created',
+                                        message: isEdit ? `${room.name} has been updated successfully.` : `${room.name} has been created successfully.`
+                                    }
+                                }));
                             })
                             .catch(err => {
                                 if (err.message !== 'handled') {
@@ -586,11 +607,13 @@
                             status: 'available'
                         };
                         this.showRoomFormModal = true;
+                        this.pushModal('roomForm');
                         this.$nextTick(() => lucide.createIcons());
                     },
 
                     closeRoomForm() {
                         this.showRoomFormModal = false;
+                        this.popModal('roomForm');
                     },
 
                     saveRoomUnit() {
@@ -618,7 +641,15 @@
                             })
                             .then(() => {
                                 this.showRoomFormModal = false;
+                                this.popModal('roomForm');
                                 this.loadRooms();
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: {
+                                        type: 'success',
+                                        title: 'Room Added',
+                                        message: `Room ${this.roomFormData.room_number} has been added successfully.`
+                                    }
+                                }));
                             })
                             .catch(err => {
                                 if (err.message !== 'handled') {
@@ -634,21 +665,25 @@
                         this.selectedRoom = room;
                         this.sidebarActiveImage = room.image;
                         this.showDetailsDrawer = true;
+                        this.pushModal('details');
                         this.setIdInUrl(room.id);
                         this.$nextTick(() => lucide.createIcons());
                     },
                     closeDetails() {
                         this.showDetailsDrawer = false;
+                        this.popModal('details');
                         this.clearIdFromUrl();
                     },
                     openImage(room, image) {
                         this.activeImage = image || room.image;
-                        this.activeImageCaption = room.code + ' · ' + room.name;
+                        this.activeImageCaption = room.name;
                         this.showImageModal = true;
+                        this.pushModal('image');
                         this.$nextTick(() => lucide.createIcons());
                     },
                     closeImage() {
                         this.showImageModal = false;
+                        this.popModal('image');
                     },
 
                     openDeleteConfirm(room) {
@@ -668,16 +703,33 @@
                                     if (!r.ok) throw new Error('delete failed');
                                     this.rooms = this.rooms.filter(r => r.id !== room.id);
                                     if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'success',
+                                            title: 'Suite Deleted',
+                                            message: `${room.name} has been removed successfully.`
+                                        }
+                                    }));
                                 })
-                                .catch(() => {});
+                                .catch(() => {
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'error',
+                                            title: 'Delete Failed',
+                                            message: 'Could not delete the suite. Please try again.'
+                                        }
+                                    }));
+                                });
                         };
                         this.showConfirmModal = true;
+                        this.pushModal('confirm');
                         this.$nextTick(() => lucide.createIcons());
                     },
 
                     runConfirmAction() {
                         if (typeof this.confirmAction === 'function') this.confirmAction();
                         this.showConfirmModal = false;
+                        this.popModal('confirm');
                         this.$nextTick(() => lucide.createIcons());
                     },
 
@@ -687,11 +739,13 @@
                             url
                         }));
                         this.showUploadModal = true;
+                        this.pushModal('upload');
                         this.loadMediaLibrary();
                         this.$nextTick(() => lucide.createIcons());
                     },
                     closeUploadModal() {
                         this.showUploadModal = false;
+                        this.popModal('upload');
                         this.isDragging = false;
                     },
                     loadMediaLibrary() {
@@ -767,6 +821,7 @@
                         this.formData.images = this.tempSelectedImages.map(i => i.url);
                         this.formData.image_ids = this.tempSelectedImages.map(i => i.id);
                         this.showUploadModal = false;
+                        this.popModal('upload');
                         this.$nextTick(() => lucide.createIcons());
                     },
                     removeUploadItem(id) {

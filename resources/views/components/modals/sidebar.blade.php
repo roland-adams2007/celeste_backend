@@ -1,4 +1,4 @@
-<div x-show="showDetailsDrawer" x-cloak class="fixed inset-0 z-[65]" style="display:none;">
+<div x-cloak class="fixed inset-0" :style="`z-index: ${zIndex('details')}; display: ${ showDetailsDrawer ? 'block' : 'none' }`" style="display:none;">
     <div x-show="showDetailsDrawer" x-transition:enter="transition ease-out duration-250"
         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"

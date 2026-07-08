@@ -1,5 +1,5 @@
-<div x-show="showUploadModal" x-cloak class="fixed inset-0 z-[80] flex items-center justify-center p-4"
-    style="display:none;">
+<div x-cloak class="fixed inset-0 flex items-center justify-center p-4"
+    :style="`z-index: ${zIndex('upload')}; display: ${ showUploadModal ? 'flex' : 'none' }`" style="display:none;">
     <div x-show="showUploadModal" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"

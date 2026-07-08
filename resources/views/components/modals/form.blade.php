@@ -1,6 +1,7 @@
 @props([
     'entityLabel' => 'Suite',
     'show' => 'showFormModal',
+    'stackKey' => 'form',
     'mode' => 'formMode',
     'error' => 'formError',
     'saving' => 'savingRoom',
@@ -8,7 +9,7 @@
     'onClose' => 'closeForm()',
 ])
 
-<div x-show="{{ $show }}" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style="display:none;">
+<div x-cloak class="fixed inset-0 flex items-center justify-center p-0 sm:p-4" :style="`z-index: ${zIndex('{{ $stackKey }}')}; display: ${ {{ $show }} ? 'flex' : 'none' }`" style="display:none;">
     <div x-show="{{ $show }}" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"

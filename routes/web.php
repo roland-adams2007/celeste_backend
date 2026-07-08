@@ -18,8 +18,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
     Route::post('/rooms/type', [RoomController::class, 'storeRoomType'])->name('rooms.store');
+    Route::put('/rooms/type/{id}', [RoomController::class, 'updateRoomType'])->name('rooms.update');
     Route::post('/rooms/units', [RoomController::class, 'storeRoom'])->name('rooms.storeRoom');
     Route::get('/rooms/{id}', [RoomController::class, 'roomTypeDetails'])->name('rooms.details');
+    Route::get('/uploads', [UploadContoller::class, 'index'])->name('uploads');
     Route::get('/uploads/list', [UploadContoller::class, 'list'])->name('uploads.list');
     Route::post('/uploads', [UploadContoller::class, 'store'])->name('uploads.store');
+    Route::delete('/uploads/{id}', [UploadContoller::class, 'destroy'])->name('uploads.destroy');
 });

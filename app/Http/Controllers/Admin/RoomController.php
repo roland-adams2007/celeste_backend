@@ -33,7 +33,6 @@ class RoomController extends Controller
 
         return [
             'id' => $roomType->id,
-            'code' => 'ST-' . str_pad((string) $roomType->id, 3, '0', STR_PAD_LEFT),
             'type' => $roomType->type,
             'name' => $roomType->name,
             'category' => $roomType->category,
@@ -170,6 +169,103 @@ class RoomController extends Controller
         }
     }
 
+    public function updateRoomType(Request $request, $id)
+    {
+        $validated = $request->validate(
+            [
+                'type' => 'required|in:standard,signature',
+                'name' => 'required|string|max:255',
+                'category' => 'required|string|max:255',
+                'description' => 'required|string|max:3000',
+                'size' => 'required|integer|min:1',
+                'capacity' => 'required|integer|min:1',
+                'bed_type' => 'required|string|max:255',
+                'view_type' => 'required|string|max:255',
+                'rate' => 'required|integer|min:0',
+                'rate_weekend' => 'required|integer|min:0',
+                'images' => 'nullable|array',
+                'images.*' => 'integer|exists:uploads,id',
+                'amenities' => 'nullable|array',
+                'amenities.*' => 'exists:amenities,slug',
+                'notes' => 'nullable|string',
+            ],
+            [
+                'type.required' => 'Please select a room type.',
+                'type.in' => 'The selected room type is invalid.',
+
+                'name.required' => 'Room type name is required.',
+                'name.max' => 'Room type name cannot exceed 255 characters.',
+
+                'category.required' => 'Please provide a room category.',
+                'category.max' => 'Room category cannot exceed 255 characters.',
+
+                'description.required' => 'Please provide a room description.',
+                'description.max' => 'Room description cannot exceed 3,000 characters.',
+
+                'size.required' => 'Room size is required.',
+                'size.integer' => 'Room size must be a whole number.',
+                'size.min' => 'Room size must be at least 1.',
+
+                'capacity.required' => 'Room capacity is required.',
+                'capacity.integer' => 'Room capacity must be a whole number.',
+                'capacity.min' => 'Room capacity must be at least 1.',
+
+                'bed_type.required' => 'Please specify the bed type.',
+                'bed_type.max' => 'Bed type cannot exceed 255 characters.',
+
+                'view_type.required' => 'Please specify the room view.',
+                'view_type.max' => 'Room view cannot exceed 255 characters.',
+
+                'rate.required' => 'Weekday room rate is required.',
+                'rate.integer' => 'Weekday room rate must be a valid amount.',
+                'rate.min' => 'Weekday room rate cannot be negative.',
+
+                'rate_weekend.required' => 'Weekend room rate is required.',
+                'rate_weekend.integer' => 'Weekend room rate must be a valid amount.',
+                'rate_weekend.min' => 'Weekend room rate cannot be negative.',
+
+                'images.array' => 'Images must be provided as a list.',
+                'images.*.integer' => 'Each selected image is invalid.',
+                'images.*.exists' => 'One or more selected images could not be found.',
+
+                'amenities.array' => 'Amenities must be provided as a list.',
+                'amenities.*.exists' => 'One or more selected amenities could not be found.',
+
+                'notes.string' => 'Notes must be valid text.',
+            ]
+        );
+
+        try {
+
+            $roomType = RoomType::findOrFail($id);
+
+            $roomType->update(
+                collect($validated)
+                    ->except('amenities')
+                    ->toArray()
+            );
+            $amenityIds = [];
+            if (!empty($validated['amenities'])) {
+                $amenityIds = Amenity::whereIn('slug', $validated['amenities'])
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            $roomType->amenities()->sync($amenityIds);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Room type updated successfully.',
+                'room' => $this->formatRoomType($roomType),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update room type.',
+            ], 500);
+        }
+    }
+
     public function storeRoom(Request $request)
     {
         $validated = $request->validate([
@@ -193,6 +289,33 @@ class RoomController extends Controller
             }
 
             return redirect()->back()->withInput()->with('error', 'Failed to create room.');
+        }
+    }
+
+    public function updateRoom(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'room_type_id' => 'required|exists:room_types,id',
+            'room_number' => 'required|string|max:255|unique:rooms,room_number,' . $id,
+            'floor' => 'required|string|max:255',
+            'status' => 'required|in:available,occupied,reserved,cleaning,maintenance',
+        ]);
+
+        try {
+            $room = Room::findOrFail($id);
+            $room->update($validated);
+
+            if ($request->wantsJson()) {
+                return response()->json($room);
+            }
+
+            return redirect()->route('rooms.index')->with('success', 'Room updated successfully.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Failed to update room.'], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Failed to update room.');
         }
     }
 
