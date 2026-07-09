@@ -49,6 +49,9 @@
 </div>
 
 {{-- Description: Quill editor, synced into formData.description via hidden state --}}
+{{-- Quill mounts once (the modal stays in the DOM, just hidden), so the initial content sync
+     only ever ran on that first mount. syncQuillContent() re-runs it every time the modal opens,
+     which is what actually loads the description when editing an existing suite. --}}
 <div x-data="{
     quill: null,
     initQuill() {
@@ -64,12 +67,16 @@
                 ]
             }
         });
-        if (formData.description) {
-            this.quill.root.innerHTML = formData.description;
-        }
+        this.syncQuillContent();
         this.quill.on('text-change', () => {
             formData.description = this.quill.root.innerHTML;
         });
+        this.$watch('showFormModal', (isOpen) => {
+            if (isOpen) this.syncQuillContent();
+        });
+    },
+    syncQuillContent() {
+        this.quill.root.innerHTML = formData.description || '';
     }
 }" x-init="initQuill()">
     <label class="block text-[11px] uppercase tracking-wider text-[#6b7280] mb-1.5">Description</label>

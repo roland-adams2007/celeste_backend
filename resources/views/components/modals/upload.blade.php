@@ -77,6 +77,15 @@
 
                 <p x-show="!mediaLibraryLoading && !mediaLibrary.length" class="text-[12px] text-[#6b7280]">
                     No images uploaded yet.</p>
+
+                <div class="mt-4 text-center" x-show="!mediaLibraryLoading && mediaLibraryHasMore">
+                    <button type="button" @click="loadMoreMediaLibrary()" :disabled="mediaLibraryLoadingMore"
+                        class="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider border border-[#e5ddd3] text-[#0E1A2B] px-4 py-2 hover:border-[#B89C6E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="mediaLibraryLoadingMore"
+                            class="w-3 h-3 border-2 border-[#B89C6E] border-t-transparent rounded-full animate-spin"></span>
+                        <span x-text="mediaLibraryLoadingMore ? 'Loading...' : 'Load More'"></span>
+                    </button>
+                </div>
             </div>
         </div>
 

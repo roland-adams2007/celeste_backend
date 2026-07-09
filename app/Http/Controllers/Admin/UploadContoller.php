@@ -17,18 +17,26 @@ class UploadContoller extends Controller
         return view('pages.upload.index');
     }
 
-    public function list()
+    public function list(Request $request)
     {
+        $perPage = (int) $request->input('per_page', 10);
+        $page = (int) $request->input('page', 1);
+
         $uploads = Uploads::where('type', 'image')
             ->latest()
-            ->get()
-            ->map(fn($upload) => [
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data' => collect($uploads->items())->map(fn($upload) => [
                 'id' => $upload->id,
                 'url' => $upload->file_name,
                 'name' => $upload->file_original_name,
-            ]);
-
-        return response()->json($uploads);
+            ]),
+            'current_page' => $uploads->currentPage(),
+            'last_page' => $uploads->lastPage(),
+            'has_more' => $uploads->currentPage() < $uploads->lastPage(),
+            'total' => $uploads->total(),
+        ]);
     }
 
     public function store(Request $request)

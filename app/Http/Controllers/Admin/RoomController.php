@@ -13,8 +13,16 @@ class RoomController extends Controller
     public function index(Request $request)
     {
         if ($request->wantsJson()) {
-            $roomTypes = RoomType::with(['amenities', 'rooms'])->latest()->get();
+            $query = RoomType::with(['amenities', 'rooms'])->latest();
 
+            if ($request->filled('search')) {
+                $query->where('name', 'like', '%' . $request->input('search') . '%');
+            }
+
+            if ($request->filled('view') && $request->input('view') !== 'all') {
+                $query->where('view_type', $request->input('view'));
+            }
+            $roomTypes = $query->get();
             return response()->json(
                 $roomTypes->map(fn(RoomType $roomType) => $this->formatRoomType($roomType))
             );
@@ -47,7 +55,7 @@ class RoomController extends Controller
             'image' => $imageUrls->first(),
             'images' => $imageUrls->values(),
             'image_ids' => array_values($imageIds),
-            'amenities' => $roomType->amenities->pluck('slug')->values(),
+            'amenities' => $roomType->amenities->pluck('slug')->unique()->values(),
             'rooms' => $roomType->rooms->map(fn(Room $room) => [
                 'id' => $room->id,
                 'room_number' => $room->room_number,
@@ -316,6 +324,32 @@ class RoomController extends Controller
             }
 
             return redirect()->back()->withInput()->with('error', 'Failed to update room.');
+        }
+    }
+
+    public function destroyRoom(Request $request, $id)
+    {
+        try {
+            $room = Room::findOrFail($id);
+            $room->delete();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Room deleted successfully.',
+                ]);
+            }
+
+            return redirect()->route('rooms.index')->with('success', 'Room deleted successfully.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete room.',
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to delete room.');
         }
     }
 

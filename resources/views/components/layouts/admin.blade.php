@@ -375,7 +375,6 @@
         </div>
     </div>
 
-    {{-- Alert Component --}}
     <x-alert />
 
     @push('scripts')

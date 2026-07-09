@@ -50,6 +50,30 @@
                         <div class="text-[13px] text-[#1a1a1a] leading-relaxed" x-html="selectedRoom.description"></div>
                     </div>
 
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-1">Category</p>
+                            <p class="text-[13px] text-[#1a1a1a]" x-text="selectedRoom.category"></p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-1">Bed Type</p>
+                            <p class="text-[13px] text-[#1a1a1a]" x-text="selectedRoom.bed_type"></p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-1">Weekend Rate</p>
+                            <p class="text-[13px] text-[#1a1a1a]" x-text="formatPrice(selectedRoom.rate_weekend)"></p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-1">Suite Type</p>
+                            <p class="text-[13px] text-[#1a1a1a] capitalize" x-text="selectedRoom.type"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6" x-show="selectedRoom.notes">
+                        <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-2">Notes</p>
+                        <p class="text-[13px] text-[#1a1a1a] leading-relaxed" x-text="selectedRoom.notes"></p>
+                    </div>
+
                     <div class="mb-6">
                         <p class="text-[11px] uppercase tracking-wider text-[#6b7280] mb-3">Amenities</p>
                         <div class="grid grid-cols-2 gap-2">
@@ -73,8 +97,18 @@
                             <template x-for="r in selectedRoom.rooms" :key="r.id">
                                 <div class="flex items-center justify-between text-[12px] text-[#1a1a1a] border border-[#e5ddd3] px-3 py-2">
                                     <span x-text="'Room ' + r.room_number + ' · Floor ' + r.floor"></span>
-                                    <span class="text-[10px] uppercase tracking-wide px-2 py-0.5"
-                                        :class="statusColor(r.status)" x-text="statusLabel(r.status)"></span>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[10px] uppercase tracking-wide px-2 py-0.5"
+                                            :class="statusColor(r.status)" x-text="statusLabel(r.status)"></span>
+                                        <button type="button" @click="openEditRoomUnit(r, selectedRoom)"
+                                            class="text-[#6b7280] hover:text-[#0E1A2B] transition-colors">
+                                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button type="button" @click="openDeleteRoomUnit(r)"
+                                            class="text-[#6b7280] hover:text-[#9b1c1c] transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </template>
                         </div>

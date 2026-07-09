@@ -108,7 +108,11 @@
             </div>
             <div class="flex items-center gap-3 flex-wrap w-full md:w-auto">
                 <div class="relative flex-1 min-w-[160px] md:flex-none">
-                    <i data-lucide="search" class="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                        x-show="!loadingRooms"></i>
+                    <div x-show="loadingRooms" x-cloak
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 border-2 border-[#B89C6E] border-t-transparent rounded-full animate-spin">
+                    </div>
                     <input type="text" x-model="search" placeholder="Search suites..."
                         class="suite-search pl-9 pr-3 py-2.5 w-full md:w-60">
                 </div>
@@ -123,7 +127,8 @@
         <p class="text-xs text-gray-400 mb-4" style="font-weight:300;"
             x-text="'Showing ' + filteredRooms.length + ' suite' + (filteredRooms.length !== 1 ? 's' : '')"></p>
 
-        <div class="hidden md:block overflow-x-auto border border-[#e5ddd3] bg-white">
+        <div class="hidden md:block overflow-x-auto border border-[#e5ddd3] bg-white transition-opacity duration-150"
+            :class="loadingRooms ? 'opacity-50 pointer-events-none' : ''">
             <table class="w-full text-left border-collapse min-w-[880px]">
                 <thead>
                     <tr class="border-b border-[#e5ddd3]">
@@ -171,11 +176,11 @@
                                 x-text="room.capacity"></td>
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-2 text-gray-400">
-                                    <template x-for="a in (room.amenities || []).slice(0, 3)" :key="a">
+                                    <template x-for="a in uniqueAmenities(room).slice(0, 3)" :key="a">
                                         <i :data-lucide="amenityIcon(a)" class="w-3.5 h-3.5"></i>
                                     </template>
-                                    <span x-show="(room.amenities || []).length > 3" class="text-[11px] text-gray-400"
-                                        x-text="'+' + ((room.amenities || []).length - 3)"></span>
+                                    <span x-show="uniqueAmenities(room).length > 3" class="text-[11px] text-gray-400"
+                                        x-text="'+' + (uniqueAmenities(room).length - 3)"></span>
                                 </div>
                             </td>
                             <td class="px-5 py-4">
@@ -213,7 +218,8 @@
             </table>
         </div>
 
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 transition-opacity duration-150"
+            :class="loadingRooms ? 'opacity-50 pointer-events-none' : ''">
             <template x-for="room in paginatedRooms" :key="room.id">
                 <div class="bg-white border border-[#e5ddd3] p-4">
                     <div class="flex items-center gap-3 mb-3">
@@ -319,6 +325,7 @@
                     confirmMessage: '',
                     confirmDanger: false,
                     confirmAction: null,
+                    confirmLoading: false,
                     showImageModal: false,
                     activeImage: '',
                     activeImageCaption: '',
@@ -330,6 +337,9 @@
                     uploadQueue: [],
                     mediaLibrary: [],
                     mediaLibraryLoading: false,
+                    mediaLibraryLoadingMore: false,
+                    mediaLibraryPage: 1,
+                    mediaLibraryHasMore: false,
                     tempSelectedImages: [],
                     amenitiesList: [],
 
@@ -346,10 +356,21 @@
                         return idx === -1 ? 50 : 50 + (idx + 1) * 10;
                     },
 
+                    searchDebounceTimer: null,
+
                     init() {
                         this.$nextTick(() => lucide.createIcons());
-                        this.$watch('search', () => this.currentPage = 1);
-                        this.$watch('filterView', () => this.currentPage = 1);
+                        this.$watch('search', () => {
+                            clearTimeout(this.searchDebounceTimer);
+                            this.searchDebounceTimer = setTimeout(() => {
+                                this.currentPage = 1;
+                                this.loadRooms();
+                            }, 400);
+                        });
+                        this.$watch('filterView', () => {
+                            this.currentPage = 1;
+                            this.loadRooms();
+                        });
                         this.$watch('currentPage', () => this.$nextTick(() => lucide.createIcons()));
                         this.$watch('filteredRooms', () => this.$nextTick(() => lucide.createIcons()));
                         this.loadAmenities();
@@ -358,7 +379,12 @@
 
                     loadRooms() {
                         this.loadingRooms = true;
-                        fetch("{{ route('rooms.index') }}", {
+                        const params = new URLSearchParams();
+                        if (this.search) params.set('search', this.search);
+                        if (this.filterView && this.filterView !== 'all') params.set('view', this.filterView);
+                        const query = params.toString();
+
+                        fetch("{{ route('rooms.index') }}" + (query ? '?' + query : ''), {
                                 headers: {
                                     'Accept': 'application/json'
                                 }
@@ -419,13 +445,14 @@
                         return found ? found.name : slug.replace(/-/g, ' ');
                     },
 
+                    uniqueAmenities(room) {
+                        return [...new Set(room.amenities || [])];
+                    },
+
                     get filteredRooms() {
-                        return this.rooms.filter(r => {
-                            const q = this.search.toLowerCase();
-                            const matchesSearch = r.name.toLowerCase().includes(q);
-                            const matchesFilter = this.filterView === 'all' || r.view_type === this.filterView;
-                            return matchesSearch && matchesFilter;
-                        });
+                        // Search and view-type filtering now happen server-side in loadRooms(),
+                        // so this just reflects whatever the server already returned.
+                        return this.rooms;
                     },
                     get totalPages() {
                         return Math.max(1, Math.ceil(this.filteredRooms.length / this.perPage));
@@ -616,14 +643,74 @@
                         this.popModal('roomForm');
                     },
 
+                    openEditRoomUnit(room, roomType) {
+                        this.roomFormMode = 'edit';
+                        this.roomFormError = null;
+                        this.roomFormData = {
+                            id: room.id,
+                            room_type_id: roomType.id,
+                            room_number: room.room_number,
+                            floor: room.floor,
+                            status: room.status
+                        };
+                        this.showRoomFormModal = true;
+                        this.pushModal('roomForm');
+                        this.$nextTick(() => lucide.createIcons());
+                    },
+
+                    openDeleteRoomUnit(room) {
+                        this.confirmTitle = 'Delete this room?';
+                        this.confirmMessage = 'This will permanently remove Room ' + room.room_number +
+                            ' from this suite. This action cannot be undone.';
+                        this.confirmDanger = true;
+                        this.confirmLoading = false;
+                        this.confirmAction = () => {
+                            return fetch("{{ url('/rooms/units') }}/" + room.id, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    }
+                                })
+                                .then(r => {
+                                    if (!r.ok) throw new Error('delete failed');
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'success',
+                                            title: 'Room Deleted',
+                                            message: `Room ${room.room_number} has been removed successfully.`
+                                        }
+                                    }));
+                                    return this.loadRooms();
+                                })
+                                .catch(() => {
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'error',
+                                            title: 'Delete Failed',
+                                            message: 'Could not delete the room. Please try again.'
+                                        }
+                                    }));
+                                });
+                        };
+                        this.showConfirmModal = true;
+                        this.pushModal('confirm');
+                        this.$nextTick(() => lucide.createIcons());
+                    },
+
                     saveRoomUnit() {
                         if (!this.roomFormData.room_number || !this.roomFormData.floor) return;
 
                         this.roomFormError = null;
                         this.savingRoomUnit = true;
 
-                        fetch("{{ route('rooms.storeRoom') }}", {
-                                method: 'POST',
+                        const isEdit = this.roomFormMode === 'edit';
+                        const url = isEdit ?
+                            "{{ url('/rooms/units') }}/" + this.roomFormData.id :
+                            "{{ route('rooms.storeRoom') }}";
+
+                        fetch(url, {
+                                method: isEdit ? 'PUT' : 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'Accept': 'application/json',
@@ -634,7 +721,8 @@
                             .then(async r => {
                                 const data = await r.json();
                                 if (!r.ok) {
-                                    this.roomFormError = data.message || 'Failed to add room.';
+                                    this.roomFormError = data.message ||
+                                        (isEdit ? 'Failed to update room.' : 'Failed to add room.');
                                     throw new Error('handled');
                                 }
                                 return data;
@@ -646,8 +734,8 @@
                                 window.dispatchEvent(new CustomEvent('toast', {
                                     detail: {
                                         type: 'success',
-                                        title: 'Room Added',
-                                        message: `Room ${this.roomFormData.room_number} has been added successfully.`
+                                        title: isEdit ? 'Room Updated' : 'Room Added',
+                                        message: `Room ${this.roomFormData.room_number} has been ${isEdit ? 'updated' : 'added'} successfully.`
                                     }
                                 }));
                             })
@@ -691,8 +779,9 @@
                         this.confirmMessage = 'This will permanently remove "' + room.name +
                             '" from your room listings. This action cannot be undone.';
                         this.confirmDanger = true;
+                        this.confirmLoading = false;
                         this.confirmAction = () => {
-                            fetch("{{ url('/admin/rooms') }}/" + room.id, {
+                            return fetch("{{ url('/admin/rooms') }}/" + room.id, {
                                     method: 'DELETE',
                                     headers: {
                                         'Accept': 'application/json',
@@ -727,10 +816,20 @@
                     },
 
                     runConfirmAction() {
-                        if (typeof this.confirmAction === 'function') this.confirmAction();
-                        this.showConfirmModal = false;
-                        this.popModal('confirm');
-                        this.$nextTick(() => lucide.createIcons());
+                        if (typeof this.confirmAction !== 'function') {
+                            this.showConfirmModal = false;
+                            this.popModal('confirm');
+                            return;
+                        }
+
+                        this.confirmLoading = true;
+                        Promise.resolve(this.confirmAction())
+                            .finally(() => {
+                                this.confirmLoading = false;
+                                this.showConfirmModal = false;
+                                this.popModal('confirm');
+                                this.$nextTick(() => lucide.createIcons());
+                            });
                     },
 
                     openUploadModal() {
@@ -748,18 +847,33 @@
                         this.popModal('upload');
                         this.isDragging = false;
                     },
-                    loadMediaLibrary() {
-                        this.mediaLibraryLoading = true;
-                        fetch("{{ route('uploads.list') }}")
+                    loadMediaLibrary(page = 1) {
+                        if (page === 1) {
+                            this.mediaLibraryLoading = true;
+                        } else {
+                            this.mediaLibraryLoadingMore = true;
+                        }
+
+                        fetch("{{ route('uploads.list') }}?page=" + page)
                             .then(r => r.json())
                             .then(data => {
-                                this.mediaLibrary = data;
+                                this.mediaLibrary = page === 1 ?
+                                    data.data :
+                                    this.mediaLibrary.concat(data.data);
+                                this.mediaLibraryPage = data.current_page;
+                                this.mediaLibraryHasMore = data.has_more;
                                 this.mediaLibraryLoading = false;
+                                this.mediaLibraryLoadingMore = false;
                                 this.$nextTick(() => lucide.createIcons());
                             })
                             .catch(() => {
                                 this.mediaLibraryLoading = false;
+                                this.mediaLibraryLoadingMore = false;
                             });
+                    },
+                    loadMoreMediaLibrary() {
+                        if (!this.mediaLibraryHasMore || this.mediaLibraryLoadingMore) return;
+                        this.loadMediaLibrary(this.mediaLibraryPage + 1);
                     },
                     handleDrop(e) {
                         this.isDragging = false;

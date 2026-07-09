@@ -158,9 +158,9 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div class="flex items-center gap-3">
                 <span class="text-xs text-gray-400" style="font-weight:300;letter-spacing:0.06em;">
-                    <span x-text="mediaLibrary.length"></span> images
+                    <span x-text="totalImages"></span> images
                 </span>
-                <button @click="loadMediaLibrary()" class="text-gray-400 hover:text-[#0E1A2B] transition-colors">
+                <button @click="loadMediaLibrary(currentPage)" class="text-gray-400 hover:text-[#0E1A2B] transition-colors">
                     <i data-lucide="refresh-cw" class="w-4 h-4" :class="{ 'animate-spin': loading }"></i>
                 </button>
             </div>
@@ -218,7 +218,7 @@
                 <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
             </button>
             <template x-for="p in totalPages" :key="p">
-                <button @click="currentPage = p" class="w-8 h-8 flex items-center justify-center text-xs"
+                <button @click="loadMediaLibrary(p)" class="w-8 h-8 flex items-center justify-center text-xs"
                     :class="currentPage === p ? 'bg-[#0E1A2B] text-white' :
                         'border border-[#e5ddd3] text-[#0E1A2B] hover:border-[#B89C6E]'"
                     x-text="p"></button>
@@ -230,7 +230,6 @@
         </div>
 
         <x-modals.confirm />
-
         <x-modals.view-image />
 
         <div x-cloak class="fixed inset-0 flex items-center justify-center p-4"
@@ -301,12 +300,12 @@
                 <div
                     class="flex items-center justify-between px-6 py-4 border-t border-[#e5ddd3] sticky bottom-0 bg-white">
                     <p class="text-[12px] text-[#6b7280]">
-                        <span x-text="mediaLibrary.length"></span> images in library
+                        <span x-text="totalImages"></span> images in library
                     </p>
                     <div class="flex items-center gap-3">
                         <button type="button" @click="closeUploadModal()"
                             class="text-xs uppercase tracking-wider text-[#6b7280] hover:text-[#0E1A2B] px-4 py-2 transition-colors">Close</button>
-                        <button type="button" @click="closeUploadModal(); loadMediaLibrary();"
+                        <button type="button" @click="closeUploadModal(); loadMediaLibrary(currentPage);"
                             class="text-xs uppercase tracking-wider bg-[#0E1A2B] text-white px-5 py-2 hover:bg-[#0E1A2B]/90 transition-colors">
                             Done
                         </button>
@@ -314,33 +313,20 @@
                 </div>
             </div>
         </div>
-
-        <div x-cloak class="fixed inset-0 flex items-center justify-center p-4"
-            :style="`z-index: ${zIndex('toast')}; display: ${ showToast ? 'flex' : 'none' }`" style="display:none;">
-            <div x-show="showToast" x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
-                x-transition:leave-end="opacity-0 translate-y-4"
-                class="bg-[#0E1A2B] text-white px-5 py-3 shadow-lg flex items-center gap-3">
-                <i data-lucide="check-circle" class="w-4 h-4 text-[#B89C6E]"></i>
-                <span class="text-sm" x-text="toastMessage"></span>
-            </div>
-        </div>
     </div>
-
     @push('scripts')
         <script>
             function mediaLibraryPage() {
                 return {
                     mediaLibrary: [],
+                    totalImages: 0,
                     loading: false,
                     currentPage: 1,
+                    totalPages: 1,
                     perPage: 20,
                     showUploadModal: false,
                     showImageModal: false,
                     showConfirmModal: false,
-                    showToast: false,
-                    toastMessage: '',
                     isDragging: false,
                     uploadQueue: [],
                     uploadErrors: [],
@@ -350,6 +336,7 @@
                     confirmMessage: '',
                     confirmDanger: false,
                     confirmAction: null,
+                    confirmLoading: false,
                     copiedId: null,
                     modalStack: [],
 
@@ -370,31 +357,34 @@
                         this.loadMediaLibrary();
                     },
 
-                    get totalPages() {
-                        return Math.max(1, Math.ceil(this.mediaLibrary.length / this.perPage));
-                    },
-                    get paginatedItems() {
-                        const start = (this.currentPage - 1) * this.perPage;
-                        return this.mediaLibrary.slice(start, start + this.perPage);
-                    },
                     prevPage() {
-                        if (this.currentPage > 1) this.currentPage--;
+                        if (this.currentPage > 1) this.loadMediaLibrary(this.currentPage - 1);
                     },
                     nextPage() {
-                        if (this.currentPage < this.totalPages) this.currentPage++;
+                        if (this.currentPage < this.totalPages) this.loadMediaLibrary(this.currentPage + 1);
                     },
 
-                    loadMediaLibrary() {
+                    loadMediaLibrary(page = 1) {
                         this.loading = true;
-                        fetch("{{ route('uploads.list') }}")
+                        fetch("{{ route('uploads.list') }}?page=" + page + "&per_page=" + this.perPage)
                             .then(r => r.json())
                             .then(data => {
-                                this.mediaLibrary = data;
+                                this.mediaLibrary = data.data;
+                                this.currentPage = data.current_page;
+                                this.totalPages = data.last_page;
+                                this.totalImages = data.total;
                                 this.loading = false;
                                 this.$nextTick(() => lucide.createIcons());
                             })
                             .catch(() => {
                                 this.loading = false;
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: {
+                                        type: 'error',
+                                        title: 'Error',
+                                        message: 'Failed to load media library.'
+                                    }
+                                }));
                             });
                     },
 
@@ -424,10 +414,24 @@
                         Array.from(fileList).forEach(file => {
                             if (!file.type.startsWith('image/')) {
                                 this.uploadErrors.push(file.name + ' is not an image');
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: {
+                                        type: 'error',
+                                        title: 'Invalid File',
+                                        message: file.name + ' is not an image.'
+                                    }
+                                }));
                                 return;
                             }
                             if (file.size > 5 * 1024 * 1024) {
                                 this.uploadErrors.push(file.name + ' exceeds 5MB');
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: {
+                                        type: 'error',
+                                        title: 'File Too Large',
+                                        message: file.name + ' exceeds 5MB limit.'
+                                    }
+                                }));
                                 return;
                             }
                             this.uploadSingleFile(file);
@@ -461,13 +465,26 @@
                                     const item = this.uploadQueue.find(u => u.id === tempId);
                                     if (item) {
                                         item.status = 'done';
-                                        this.mediaLibrary.unshift({
-                                            id: data.id,
-                                            url: data.url,
-                                            name: data.name
-                                        });
+                                        this.totalImages += 1;
+                                        if (this.currentPage === 1) {
+                                            this.mediaLibrary.unshift({
+                                                id: data.id,
+                                                url: data.url,
+                                                name: data.name
+                                            });
+                                            if (this.mediaLibrary.length > this.perPage) {
+                                                this.mediaLibrary.pop();
+                                            }
+                                        }
                                     }
                                     this.$nextTick(() => lucide.createIcons());
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'success',
+                                            title: 'Upload Complete',
+                                            message: file.name + ' uploaded successfully.'
+                                        }
+                                    }));
                                     setTimeout(() => {
                                         this.uploadQueue = this.uploadQueue.filter(u => u.id !== tempId);
                                     }, 600);
@@ -476,6 +493,13 @@
                                     const item = this.uploadQueue.find(u => u.id === tempId);
                                     if (item) item.status = 'error';
                                     this.uploadErrors.push(file.name + ' upload failed');
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'error',
+                                            title: 'Upload Failed',
+                                            message: 'Failed to upload ' + file.name + '.'
+                                        }
+                                    }));
                                     this.$nextTick(() => lucide.createIcons());
                                 });
                         };
@@ -485,7 +509,6 @@
                     removeUploadItem(id) {
                         const item = this.uploadQueue.find(u => u.id === id);
                         if (item && item.status === 'uploading') {
-                            // Can't abort fetch easily, but we can remove from UI
                         }
                         this.uploadQueue = this.uploadQueue.filter(u => u.id !== id);
                     },
@@ -505,10 +528,22 @@
                     copyUrl(url) {
                         navigator.clipboard.writeText(url).then(() => {
                             this.copiedId = this.mediaLibrary.find(i => i.url === url)?.id;
-                            this.showToastMessage('URL copied to clipboard');
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: {
+                                    type: 'success',
+                                    title: 'Copied',
+                                    message: 'URL copied to clipboard.'
+                                }
+                            }));
                             setTimeout(() => this.copiedId = null, 2000);
                         }).catch(() => {
-                            this.showToastMessage('Failed to copy URL');
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: {
+                                    type: 'error',
+                                    title: 'Copy Failed',
+                                    message: 'Failed to copy URL.'
+                                }
+                            }));
                         });
                     },
 
@@ -517,8 +552,9 @@
                         this.confirmMessage = 'This will permanently remove "' + item.name +
                             '" from your media library. This action cannot be undone.';
                         this.confirmDanger = true;
+                        this.confirmLoading = false;
                         this.confirmAction = () => {
-                            fetch("{{ route('uploads.destroy', ':id') }}".replace(':id', item.id), {
+                            return fetch("{{ route('uploads.destroy', ':id') }}".replace(':id', item.id), {
                                     method: 'DELETE',
                                     headers: {
                                         'Accept': 'application/json',
@@ -527,12 +563,26 @@
                                 })
                                 .then(r => {
                                     if (!r.ok) throw new Error('delete failed');
-                                    this.mediaLibrary = this.mediaLibrary.filter(i => i.id !== item.id);
-                                    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-                                    this.showToastMessage('Image deleted');
+                                    this.totalImages = Math.max(0, this.totalImages - 1);
+                                    const newTotalPages = Math.max(1, Math.ceil(this.totalImages / this.perPage));
+                                    const targetPage = Math.min(this.currentPage, newTotalPages);
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'success',
+                                            title: 'Deleted',
+                                            message: 'Image deleted successfully.'
+                                        }
+                                    }));
+                                    return this.loadMediaLibrary(targetPage);
                                 })
                                 .catch(() => {
-                                    this.showToastMessage('Failed to delete image');
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: {
+                                            type: 'error',
+                                            title: 'Delete Failed',
+                                            message: 'Failed to delete image.'
+                                        }
+                                    }));
                                 });
                         };
                         this.showConfirmModal = true;
@@ -541,21 +591,20 @@
                     },
 
                     runConfirmAction() {
-                        if (typeof this.confirmAction === 'function') this.confirmAction();
-                        this.showConfirmModal = false;
-                        this.popModal('confirm');
-                        this.$nextTick(() => lucide.createIcons());
-                    },
+                        if (typeof this.confirmAction !== 'function') {
+                            this.showConfirmModal = false;
+                            this.popModal('confirm');
+                            return;
+                        }
 
-                    showToastMessage(msg) {
-                        this.toastMessage = msg;
-                        this.showToast = true;
-                        this.pushModal('toast');
-                        clearTimeout(this.toastTimer);
-                        this.toastTimer = setTimeout(() => {
-                            this.showToast = false;
-                            this.popModal('toast');
-                        }, 3000);
+                        this.confirmLoading = true;
+                        Promise.resolve(this.confirmAction())
+                            .finally(() => {
+                                this.confirmLoading = false;
+                                this.showConfirmModal = false;
+                                this.popModal('confirm');
+                                this.$nextTick(() => lucide.createIcons());
+                            });
                     }
                 }
             }

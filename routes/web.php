@@ -20,6 +20,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/rooms/type', [RoomController::class, 'storeRoomType'])->name('rooms.store');
     Route::put('/rooms/type/{id}', [RoomController::class, 'updateRoomType'])->name('rooms.update');
     Route::post('/rooms/units', [RoomController::class, 'storeRoom'])->name('rooms.storeRoom');
+    Route::put('/rooms/units/{id}', [RoomController::class, 'updateRoom'])->name('rooms.updateRoom');
+    Route::delete('/rooms/units/{id}', [RoomController::class, 'destroyRoom'])->name('rooms.destroyRoom');
     Route::get('/rooms/{id}', [RoomController::class, 'roomTypeDetails'])->name('rooms.details');
     Route::get('/uploads', [UploadContoller::class, 'index'])->name('uploads');
     Route::get('/uploads/list', [UploadContoller::class, 'list'])->name('uploads.list');

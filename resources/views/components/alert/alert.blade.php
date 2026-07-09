@@ -25,17 +25,17 @@
                 <i :data-lucide="variants[toast.type].icon" class="w-[17px] h-[17px] shrink-0 mt-px" :class="variants[toast.type].iconColor"></i>
 
                 <div class="flex-1 min-w-0">
-                    <div class="text-[12px] font-semibold text-[#0E1A2B] leading-snug" x-text="toast.title"></div>
+                    <div class="text-[12px] font-semibold text-navy leading-snug" x-text="toast.title"></div>
                     <div class="text-[11px] text-[#6b7280] font-light mt-0.5 leading-relaxed" x-text="toast.message"></div>
                 </div>
 
-                <button @click="dismissToast(toast.id)" class="shrink-0 w-5 h-5 flex items-center justify-center text-[#9ca3af] hover:text-[#1a1a1a] transition-colors bg-transparent border-0 cursor-pointer mt-px">
+                <button @click="dismissToast(toast.id)" class="shrink-0 w-5 h-5 flex items-center justify-center text-[#9ca3af] hover:text-ink transition-colors bg-transparent border-0 cursor-pointer mt-px">
                     <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
             </div>
 
             <div class="h-[2px] w-full bg-[#f3f0eb]">
-                <div class="h-full" :class="variants[toast.type].progress" :style="`width: ${toast.progress}%`"></div>
+                <div :id="toast.id + '-bar'" class="h-full" :class="variants[toast.type].progress" :style="`width: ${toast.progress}%`"></div>
             </div>
         </div>
     </template>
@@ -94,7 +94,7 @@
             },
             init() {
                 lucide.createIcons();
-                
+
                 // Auto-detect toast from page data
                 if (window.toastData) {
                     this.showToast(

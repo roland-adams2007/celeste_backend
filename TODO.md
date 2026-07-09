@@ -1,0 +1,1 @@
+the icon amenties it repeatig twice, in room index
